@@ -8,6 +8,7 @@ setup(
         # list your dependencies here
         'numpy>=1.26.4',
         'scipy>=1.12.0',
+        'imageio>=2.34.0'
     ],
     package_data={
         'spot_control_suite': ['assets/*'],

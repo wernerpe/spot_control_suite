@@ -1,13 +1,17 @@
 import numpy as np
-from scipy.spatial import Delaunay
 import os
+import imageio
+from scipy.spatial import Delaunay
 
-path_tmp_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-path_tmp_dir+= '/tmp'
+path_tmp_dir = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+path_tmp_dir += "/tmp"
+
 
 def terrain_to_obj(length: float, width: float, heightmap: np.ndarray, name: str):
-    
-    assert len(heightmap.shape)==2
+
+    assert len(heightmap.shape) == 2
 
     resolution = list(heightmap.shape)
     # Generate a grid of height points
@@ -16,11 +20,11 @@ def terrain_to_obj(length: float, width: float, heightmap: np.ndarray, name: str
         np.linspace(0, width, resolution[1]) - width / 2,
     )
     z = heightmap
-    # Flatten the arrays for Delaunay triangulation
+    
+    # Triangulate 
     points = np.column_stack((x.flatten(), y.flatten(), z.flatten()))
-
-    # Perform Delaunay triangulation
     tri = Delaunay(points[:, :2])
+    
     path_file = path_tmp_dir + "/" + name + ".obj"
     with open(path_file, "w") as obj_file:
         obj_file.write("# terrain\n")
@@ -55,8 +59,21 @@ def get_terrain_urdf(length: float, width: float, heightmap: np.ndarray, name: s
     </link>
 </robot>"""
     path_file = path_tmp_dir + "/" + name + ".urdf"
-    with open(path_file , "w") as f:
+    with open(path_file, "w") as f:
         f.write(urdf_file)
         f.flush()
-    
+
     return path_file, verts, faces
+
+
+def get_terrain_asset_from_bitmap(path_bitmap, scale_x=0.1, scale_y=0.1, scale_z=0.1):
+    image = imageio.imread(path_bitmap)
+    name = (path_bitmap.split("/")[-1]).split(".")[0]
+    # Convert the image to a NumPy array
+    hmap = np.array(image)
+    return get_terrain_urdf(
+        length=scale_x * hmap.shape[0],
+        width=scale_y * hmap.shape[1],
+        heightmap=hmap * scale_z,
+        name=name,
+    )
