@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<robot name="terrain">
+    <link name="test_trimesh">
+    <visual name="test_trimesh_visual">
+        <geometry>
+            <mesh filename="test_trimesh.obj"/>
+        </geometry>
+    </visual>
+    <collision name="test_trimesh_visual">
+        <geometry>
+            <mesh filename="test_trimesh.obj"/>
+        </geometry>
+    </collision>
+    </link>
+</robot>
