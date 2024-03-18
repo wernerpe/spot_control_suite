@@ -27,7 +27,7 @@ def get_terrain_urdf_from_obj(obj_name):
     urdf_string = f"""<?xml version="1.0"?>
 <robot name="terrain">
 <material name="terrain_color">
-    <color rgba="0.5 0.5 0.5 1"/> 
+    <color rgba="0.7 0.7 0.7 1"/> 
 </material>
     <link name="{obj_name}">
     <visual name="{obj_name}_visual">
@@ -87,33 +87,40 @@ def fill_terrain_type(terrain: IsaacTerrain, terrain_type: str, zscale =0.1):
         terrain = pyramid_sloped_terrain(terrain, slope = 0.5, platform_size = 1)
     elif terr_type == 'discrete_obstacles':
         terrain = discrete_obstacles_terrain(terrain, 
-                                             max_height=1, 
-                                             min_size = 0.2, 
-                                             max_size=0.4, 
-                                             num_rects =10, 
-                                             platform_size=(terrain.sub_width*terrain.horizontal_scale)/4)
+                                             max_height = 0.2, 
+                                             min_size = 1.3, 
+                                             max_size= 3.6, 
+                                             num_rects =50, 
+                                             platform_size=(terrain.sub_width*terrain.horizontal_scale)/10.)
     elif terr_type == 'wave':
-        terrain = wave_terrain(terrain, num_waves=4, amplitude=1)
+        terrain = wave_terrain(terrain, num_waves=4, amplitude=0.1)
     elif terr_type == 'stairs':
-        terrain = stairs_terrain(terrain, step_height=0.2, step_width=terrain.width*terrain.horizontal_scale)
+        terrain = stairs_terrain(terrain, step_height=0.2, step_width=terrain.width*terrain.horizontal_scale/20)
     elif terr_type == 'pyramid_stairs':
-        terrain = pyramid_stairs_terrain(terrain, step_height=0.2, step_width=terrain.width*terrain.horizontal_scale, platform_size=terrain.width*terrain.horizontal_scale/4)
+        terrain = pyramid_stairs_terrain(terrain, step_height=0.2, step_width=terrain.width*terrain.horizontal_scale/20.0, platform_size=terrain.width*terrain.horizontal_scale/4)
     elif terr_type == 'stepping_stones':
         len_sc = terrain.width*terrain.horizontal_scale
-        terrain = stepping_stones_terrain(terrain, len_sc/5, len_sc/40, 0.2, platform_size=1., depth=-3)
+        terrain = stepping_stones_terrain(terrain, len_sc/10, len_sc/35, 0.2, platform_size=1., depth=-0.8)
 
     
     # elif terrain_type == 'stepping_stones':
     return terrain
 
-def get_ig_terrain_urdf(name, terrain_type, xlen= 8.0, ylen = 8.0, zscale=0.1, subterrain_splits=1):
+def get_ig_terrain_urdf(name, 
+                        terrain_type, 
+                        xlen= 8.0, 
+                        ylen = 8.0, 
+                        zscale=0.1, 
+                        subterrain_splits=1, 
+                        resolution_x = 256,
+                        centered=True):
     assert terrain_type in terrain_types+['random']
-    resolution_x = 40
     horizontal_scale = xlen/resolution_x
     length = int(ylen/horizontal_scale)
     terrain = IsaacTerrain(width= resolution_x, 
                            length=length, 
                            horizontal_scale=horizontal_scale, 
+                           vertical_scale=zscale,
                            subterrain_splits_per_side=subterrain_splits)
     sub_terrain_idx = [[i, j] for i in range(subterrain_splits) for j in range(subterrain_splits)]
     subterrain = terrain.get_subterrain()
@@ -125,8 +132,11 @@ def get_ig_terrain_urdf(name, terrain_type, xlen= 8.0, ylen = 8.0, zscale=0.1, s
     verts, triangles= convert_heightfield_to_trimesh(terrain.height_field_raw, 
                                    terrain.horizontal_scale, 
                                    terrain.vertical_scale,
-                                   slope_threshold=0.8)
+                                   slope_threshold=0.75)
     terrain_name = name+'_'+terrain_type
+    if centered:
+        verts[:,0] -= xlen/2.0
+        verts[:,1] -= ylen/2.0
     path_file = save_obj(terrain_name, verts, triangles)
     urdf_string = get_terrain_urdf_from_obj(terrain_name)
     path_urdf = path_tmp_dir + "/" + terrain_name + ".urdf"
