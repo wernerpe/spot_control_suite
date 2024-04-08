@@ -29,8 +29,7 @@
     <child link="base_y"/>
     <axis xyz="0 1 0"/>
   </joint>
-  <joint name="base_z" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0.52"/>
+  <joint name="base_z" type="prismatic">
     <parent link="base_y"/>
     <child link="base_z"/>
     <axis xyz="0 0 1"/>

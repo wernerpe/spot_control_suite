@@ -346,4 +346,93 @@ def convert_heightfield_to_trimesh(height_field_raw, horizontal_scale, vertical_
         triangles[start+1:stop:2, 1] = ind2
         triangles[start+1:stop:2, 2] = ind3
 
-    return vertices, triangles
+    bottom_triangles = -np.ones((2*(num_rows-1)*(num_cols-1), 3), dtype=np.uint32)
+    bottom_vertices = vertices.copy()
+    minz = np.min(bottom_vertices[:,2]) -1
+    bottom_vertices[:,2] = minz
+    #down projection of vertices belonging to vertical faces breaks vtk generation because of identical vertices.
+    bottom_vertices[:,0] += 0.01 * (np.random.rand(len(bottom_vertices[:,0])) - 0.5)
+    bottom_vertices[:,1] += 0.01 * (np.random.rand(len(bottom_vertices[:,1])) - 0.5)
+
+    offset = len(vertices)
+    for i in range(num_rows - 1):
+        ind0 = np.arange(0, num_cols-1) + i*num_cols
+        ind1 = ind0 + 1
+        ind2 = ind0 + num_cols
+        ind3 = ind2 + 1
+        start = 2*i*(num_cols-1)
+        stop = start + 2*(num_cols-1)
+        bottom_triangles[start:stop:2, 0] = ind0 + offset
+        bottom_triangles[start:stop:2, 1] = ind1 + offset
+        bottom_triangles[start:stop:2, 2] = ind3 + offset
+        bottom_triangles[start+1:stop:2, 0] = ind0 + offset
+        bottom_triangles[start+1:stop:2, 1] = ind3 + offset
+        bottom_triangles[start+1:stop:2, 2] = ind2 + offset
+    
+    
+    side0_tri = np.zeros((2*num_cols, 3))
+    for idx in range(num_cols-1):
+        ind0 = idx
+        ind1 = idx + offset
+        ind2 = idx + 1
+        side0_tri[2*idx, 0] = ind0
+        side0_tri[2*idx, 1] = ind1
+        side0_tri[2*idx, 2] = ind2
+        ind0 = idx + offset
+        ind1 = idx + offset + 1
+        ind2 = idx + 1
+        side0_tri[2*idx+1, 0] = ind0
+        side0_tri[2*idx+1, 1] = ind1
+        side0_tri[2*idx+1, 2] = ind2
+
+    side1_tri = np.zeros((2*num_cols, 3))
+    for idx in range(num_rows-1):
+        ind0 = idx*num_cols
+        ind1 = idx*num_cols + offset
+        ind2 = idx*num_cols + num_cols
+        side1_tri[2*idx, 0] = ind0
+        side1_tri[2*idx, 1] = ind1
+        side1_tri[2*idx, 2] = ind2
+        ind0 = idx*num_cols + offset
+        ind1 = idx*num_cols + offset + num_cols
+        ind2 = idx*num_cols + num_cols
+        side1_tri[2*idx+1, 0] = ind0
+        side1_tri[2*idx+1, 1] = ind1
+        side1_tri[2*idx+1, 2] = ind2
+
+    side2_tri = np.zeros((2*num_cols, 3))
+    row_offset = num_cols-1
+    for idx in range(num_cols-1):
+        ind0 = idx*num_cols + row_offset
+        ind1 = idx*num_cols + offset + row_offset
+        ind2 = idx*num_cols + num_cols + row_offset
+        side2_tri[2*idx, 0] = ind0
+        side2_tri[2*idx, 1] = ind2
+        side2_tri[2*idx, 2] = ind1
+        ind0 = idx*num_cols + offset + row_offset
+        ind1 = idx*num_cols + offset + num_cols + row_offset
+        ind2 = idx*num_cols + num_cols + row_offset
+        side2_tri[2*idx+1, 0] = ind0
+        side2_tri[2*idx+1, 1] = ind2
+        side2_tri[2*idx+1, 2] = ind1
+
+    side3_tri = np.zeros((2*num_cols, 3))
+
+    for idx in range(num_cols-1):
+        ind0 = idx + num_cols*num_rows-num_cols
+        ind1 = idx + offset + num_cols*num_rows-num_cols
+        ind2 = idx + 1 + num_cols*num_rows-num_cols
+        side3_tri[2*idx, 0] = ind0
+        side3_tri[2*idx, 1] = ind2
+        side3_tri[2*idx, 2] = ind1
+        ind0 = idx + offset + num_cols*num_rows-num_cols
+        ind1 = idx + offset + 1 + num_cols*num_rows-num_cols
+        ind2 = idx + 1 + num_cols*num_rows-num_cols
+        side3_tri[2*idx+1, 0] = ind0
+        side3_tri[2*idx+1, 1] = ind2
+        side3_tri[2*idx+1, 2] = ind1
+
+    verts = np.concatenate((vertices, bottom_vertices), axis = 0)
+    tri = np.concatenate((triangles, bottom_triangles, side0_tri, side1_tri, side2_tri, side3_tri), axis = 0)
+
+    return verts, tri
